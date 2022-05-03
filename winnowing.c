@@ -1,4 +1,5 @@
 #include "libmoss/winnowing.h"
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -7,7 +8,7 @@
 #include "libmoss/internal/defs.h"
 
 int moss_winnow_init(moss_winnow_t *winnow, size_t k) {
-    int ret = 0;
+    int ret;
 
     winnow->k = k;
     winnow->window_idx = 0;
@@ -15,8 +16,11 @@ int moss_winnow_init(moss_winnow_t *winnow, size_t k) {
     winnow->first_window_read = false;
     winnow->window = malloc(k * sizeof(*winnow->window));
     if (!winnow->window) {
+        ret = errno;
         goto exit;
     }
+
+    ret = 0;
 
 exit:
     return ret;
