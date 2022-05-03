@@ -1,6 +1,7 @@
 TARGET_SO = libmoss.so
 TARGET_AR = libmoss.a
-OBJS =
+OBJS = \
+	winnowing.o
 DEPS = $(OBJS:.o=.d)
 
 CPPFLAGS = -MMD -Iinclude
