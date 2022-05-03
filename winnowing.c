@@ -30,8 +30,9 @@ void moss_winnow_free(moss_winnow_t *winnow) {
     free(winnow->window);
 }
 
-size_t moss_winnow_process(moss_winnow_t *restrict winnow, uint64_t *restrict hashes,
-        size_t len, uint64_t *restrict fingerprint) {
+size_t moss_winnow_process(moss_winnow_t *restrict winnow,
+        const uint64_t *restrict hashes, size_t len,
+        uint64_t *restrict fingerprint) {
     size_t i = 0;
 
     if (!winnow->first_window_read) {

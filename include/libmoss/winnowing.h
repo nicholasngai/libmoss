@@ -32,8 +32,8 @@ void moss_winnow_free(moss_winnow_t *winnow);
  * the first hash value not yet read into the windowa, nd the next call to
  * winnow should start at &HASHES[ret] and have length LEN - ret. If the return
  * value is equal to LEN, then winnowing completed and returned a fingerprint
- * value.  */
-size_t moss_winnow_process(moss_winnow_t *winnow, uint64_t *hashes, size_t len,
-        uint64_t *fingerprint);
+ * value. */
+size_t moss_winnow_process(moss_winnow_t *winnow, const uint64_t *hashes,
+        size_t len, uint64_t *fingerprint);
 
 #endif /* libmoss/winnowing.h */
