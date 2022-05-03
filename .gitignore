@@ -3,3 +3,4 @@
 *.a
 *.d
 test/test
+tokenizers/go/tokenizer
