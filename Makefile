@@ -1,6 +1,7 @@
 TARGET_SO = libmoss.so
 TARGET_AR = libmoss.a
 OBJS = \
+	hashing.o \
 	winnowing.o
 DEPS = $(OBJS:.o=.d)
 
