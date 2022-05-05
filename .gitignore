@@ -4,4 +4,4 @@
 *.d
 test/test
 tools/moss
-tokenizers/go/tokenizer
+tools/moss_tokenizer_go
