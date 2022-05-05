@@ -2,7 +2,8 @@ TARGET_SO = libmoss.so
 TARGET_AR = libmoss.a
 OBJS = \
 	hashing.o \
-	winnowing.o
+	winnowing.o \
+	internal/hashmap.o
 DEPS = $(OBJS:.o=.d)
 
 CPPFLAGS = -MMD -Iinclude

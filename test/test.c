@@ -4,7 +4,61 @@
 #include <stdio.h>
 #include <string.h>
 #include <libmoss/hashing.h>
+#include <libmoss/internal/hashmap.h>
 #include <libmoss/winnowing.h>
+
+static void test_hashmap(void) {
+    int ret;
+
+    struct moss_hashmap hashmap;
+    ret = moss_hashmap_init(&hashmap, 123);
+    assert(!ret);
+
+    for (uint64_t i = 0; i < 256; i++) {
+        ret = moss_hashmap_get(&hashmap, i, NULL);
+        assert(!ret);
+    }
+
+    for (uint64_t i = 0; i < 256; i++) {
+        ret = moss_hashmap_put(&hashmap, i, (void *) (i + 100), NULL);
+        assert(ret == 0);
+    }
+
+    for (uint64_t i = 0; i < 256; i++) {
+        uint64_t old_val;
+        ret =
+            moss_hashmap_put(&hashmap, i, (void *) (i + 200),
+                    (void *) &old_val);
+        assert(ret == 1);
+        assert(old_val == i + 100);
+    }
+
+    for (uint64_t i = 0; i < 256; i++) {
+        uint64_t val;
+        ret = moss_hashmap_get(&hashmap, i, (void *) &val);
+        assert(ret);
+        assert(val == i + 200);
+    }
+
+    for (uint64_t i = 0; i < 256; i++) {
+        uint64_t old_val;
+        ret = moss_hashmap_delete(&hashmap, i, (void *) &old_val);
+        assert(ret);
+        assert(old_val == i + 200);
+    }
+
+    for (uint64_t i = 0; i < 256; i++) {
+        ret = moss_hashmap_get(&hashmap, i, NULL);
+        assert(!ret);
+    }
+
+    for (uint64_t i = 0; i < 256; i++) {
+        ret = moss_hashmap_delete(&hashmap, i, NULL);
+        assert(!ret);
+    }
+
+    moss_hashmap_free(&hashmap);
+}
 
 static void test_hashing(void) {
     static const uint64_t tokens[] = {
@@ -108,6 +162,7 @@ static void test_winnow(void) {
 }
 
 int main(void) {
+    test_hashmap();
     test_hashing();
     test_winnow();
 }
