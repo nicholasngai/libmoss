@@ -10,3 +10,6 @@ LDLIBS = -L.. -l:libmoss.a
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
+
+clean:
+	rm -f $(TARGET)
