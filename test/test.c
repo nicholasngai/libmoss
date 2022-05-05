@@ -4,60 +4,42 @@
 #include <stdio.h>
 #include <string.h>
 #include <libmoss/hashing.h>
-#include <libmoss/internal/hashmap.h>
+#include <libmoss/internal/multimap.h>
 #include <libmoss/winnowing.h>
 
-static void test_hashmap(void) {
+static void test_multimap(void) {
     int ret;
 
-    struct moss_hashmap hashmap;
-    ret = moss_hashmap_init(&hashmap, 123);
+    struct moss_multimap multimap;
+    ret = moss_multimap_init(&multimap, 123);
     assert(!ret);
 
     for (uint64_t i = 0; i < 256; i++) {
-        ret = moss_hashmap_get(&hashmap, i, NULL);
+        ret = moss_multimap_get(&multimap, i, NULL, NULL);
         assert(!ret);
     }
 
     for (uint64_t i = 0; i < 256; i++) {
-        ret = moss_hashmap_put(&hashmap, i, (void *) (i + 100), NULL);
-        assert(ret == 0);
+        ret = moss_multimap_add(&multimap, i, (void *) (i + 100));
+        assert(!ret);
     }
 
     for (uint64_t i = 0; i < 256; i++) {
-        uint64_t old_val;
-        ret =
-            moss_hashmap_put(&hashmap, i, (void *) (i + 200),
-                    (void *) &old_val);
-        assert(ret == 1);
-        assert(old_val == i + 100);
+        ret = moss_multimap_add(&multimap, i, (void *) (i + 200));
+        assert(!ret);
     }
 
     for (uint64_t i = 0; i < 256; i++) {
-        uint64_t val;
-        ret = moss_hashmap_get(&hashmap, i, (void *) &val);
+        uint64_t *vals;
+        size_t vals_len;
+        ret = moss_multimap_get(&multimap, i, (void *) &vals, &vals_len);
         assert(ret);
-        assert(val == i + 200);
+        assert(vals_len == 2);
+        assert(vals[0] == i + 100);
+        assert(vals[1] == i + 200);
     }
 
-    for (uint64_t i = 0; i < 256; i++) {
-        uint64_t old_val;
-        ret = moss_hashmap_delete(&hashmap, i, (void *) &old_val);
-        assert(ret);
-        assert(old_val == i + 200);
-    }
-
-    for (uint64_t i = 0; i < 256; i++) {
-        ret = moss_hashmap_get(&hashmap, i, NULL);
-        assert(!ret);
-    }
-
-    for (uint64_t i = 0; i < 256; i++) {
-        ret = moss_hashmap_delete(&hashmap, i, NULL);
-        assert(!ret);
-    }
-
-    moss_hashmap_free(&hashmap);
+    moss_multimap_free(&multimap);
 }
 
 static void test_hashing(void) {
@@ -162,7 +144,7 @@ static void test_winnow(void) {
 }
 
 int main(void) {
-    test_hashmap();
+    test_multimap();
     test_hashing();
     test_winnow();
 }

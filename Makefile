@@ -3,7 +3,7 @@ TARGET_AR = libmoss.a
 OBJS = \
 	hashing.o \
 	winnowing.o \
-	internal/hashmap.o
+	internal/multimap.o
 DEPS = $(OBJS:.o=.d)
 
 CPPFLAGS = -MMD -Iinclude
