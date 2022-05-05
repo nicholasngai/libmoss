@@ -22,6 +22,9 @@ typedef struct moss_winnow {
 /* Initializes a winnowing context for windows of length W. */
 int moss_winnow_init(moss_winnow_t *winnow, size_t w);
 
+/* Resets a winnowing context. The value of w remains constant. */
+void moss_winnow_reset(moss_winnow_t *winnow);
+
 /* Frees a winnowing context. */
 void moss_winnow_free(moss_winnow_t *winnow);
 

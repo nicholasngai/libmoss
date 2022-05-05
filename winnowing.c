@@ -11,19 +11,23 @@ int moss_winnow_init(moss_winnow_t *winnow, size_t w) {
     int ret;
 
     winnow->w = w;
-    winnow->window_idx = 0;
-    winnow->min_idx = 0;
-    winnow->first_window_read = false;
     winnow->window = malloc(winnow->w * sizeof(*winnow->window));
     if (!winnow->window) {
         ret = errno;
         goto exit;
     }
+    moss_winnow_reset(winnow);
 
     ret = 0;
 
 exit:
     return ret;
+}
+
+void moss_winnow_reset(moss_winnow_t *winnow) {
+    winnow->window_idx = 0;
+    winnow->min_idx = 0;
+    winnow->first_window_read = false;
 }
 
 void moss_winnow_free(moss_winnow_t *winnow) {

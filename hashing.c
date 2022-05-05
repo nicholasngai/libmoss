@@ -18,19 +18,23 @@ int moss_hashing_init(moss_hashing_t *hashing, size_t k) {
     int ret;
 
     hashing->k = k;
-    hashing->input_len = 0;
-    hashing->prev_tokens_len = 0;
     hashing->prev_tokens =
         malloc((hashing->k * 2 - 2) * sizeof(*hashing->prev_tokens));
     if (!hashing->prev_tokens) {
         ret = errno;
         goto exit;
     }
+    moss_hashing_reset(hashing);
 
     ret = 0;
 
 exit:
     return ret;
+}
+
+void moss_hashing_reset(moss_hashing_t *hashing) {
+    hashing->input_len = 0;
+    hashing->prev_tokens_len = 0;
 }
 
 void moss_hashing_free(moss_hashing_t *hashing) {

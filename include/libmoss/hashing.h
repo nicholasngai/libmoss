@@ -26,6 +26,9 @@ typedef struct moss_hashing {
  * input stream. */
 int moss_hashing_init(moss_hashing_t *hashing, size_t k);
 
+/* Resets a hashing context. The value of k remains constant. */
+void moss_hashing_reset(moss_hashing_t *hashing);
+
 /* Frees the hashing context. */
 void moss_hashing_free(moss_hashing_t *hashing);
 
