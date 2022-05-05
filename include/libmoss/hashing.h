@@ -12,9 +12,14 @@ typedef struct moss_hashing {
     const uint64_t *input;
     size_t input_len;
 
-    /* The previously K - 1 tokens in the stream. Used to resume k-grams when a
-     * new stream of tokens is fed in. */
+    /* The last K - 1 tokens of the previous stream. Used to resume k-grams
+     * when a new stream of tokens is fed in. This buffer is of length 2K - 2
+     * so that the first K - 1 tokens in the next stream can placed adjacent to
+     * the previous tokens for hashing purposes. The actual number of active
+     * tokens in the buffer is PREV_TOKENS_LEN. If PREV_TOKENS_LEN < K, the
+     * buffer should no longer be used. */
     uint64_t *prev_tokens;
+    size_t prev_tokens_len;
 } moss_hashing_t;
 
 /* Initializes the hashing context to read k-grams of length K from the token

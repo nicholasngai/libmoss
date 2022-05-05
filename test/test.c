@@ -23,15 +23,44 @@ static void test_hashing(void) {
     ret = moss_hashing_init(&hashing, 5);
     assert(!ret);
 
-    moss_hashing_input_tokens(&hashing, tokens,
-            sizeof(tokens) / sizeof(*tokens));
+    moss_hashing_input_tokens(&hashing, tokens, 2);
 
-    while (result_len < sizeof(result) / sizeof(*result)) {
+    do {
         ret = moss_hashing_get_hashes(&hashing, result + result_len,
                 sizeof(result) / sizeof(*result) - result_len);
-        assert(ret > 0);
+        assert(ret >= 0);
         result_len += ret;
-    }
+    } while (ret > 0 && result_len < 13);
+
+    moss_hashing_input_tokens(&hashing, tokens + 2, 4);
+
+    do {
+        ret = moss_hashing_get_hashes(&hashing, result + result_len,
+                sizeof(result) / sizeof(*result) - result_len);
+        assert(ret >= 0);
+        result_len += ret;
+    } while (ret > 0 && result_len < 13);
+
+    moss_hashing_input_tokens(&hashing, tokens + 6, 9);
+
+    do {
+        ret = moss_hashing_get_hashes(&hashing, result + result_len,
+                sizeof(result) / sizeof(*result) - result_len);
+        assert(ret >= 0);
+        result_len += ret;
+    } while (ret > 0 && result_len < 13);
+
+    moss_hashing_input_tokens(&hashing, tokens + 15,
+            sizeof(tokens) / sizeof(*tokens) - 15);
+
+    do {
+        ret = moss_hashing_get_hashes(&hashing, result + result_len,
+                sizeof(result) / sizeof(*result) - result_len);
+        assert(ret >= 0);
+        result_len += ret;
+    } while (ret > 0 && result_len < 13);
+
+    assert(result_len == 13);
 
     /* Check that the future hash call returns 0 since the input buffer should
      * have been consumed. */
