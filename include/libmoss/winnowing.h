@@ -6,11 +6,11 @@
 #include <stdint.h>
 
 typedef struct moss_winnow {
-    /* Current window. This is a circular buffer that starts at
-     * WINDOW[WINDOW_IDX] and ends at WINDOW[WINDOW_IDX - 1 % K] */
-    uint64_t *window;
     /* Size of the window. */
-    size_t k;
+    size_t w;
+    /* Current window. This is a circular buffer that starts at
+     * WINDOW[WINDOW_IDX] and ends at WINDOW[WINDOW_IDX - 1 % W] */
+    uint64_t *window;
     /* Current window start position. */
     size_t window_idx;
     /* Current window minimum hash index. */
@@ -19,8 +19,8 @@ typedef struct moss_winnow {
     bool first_window_read;
 } moss_winnow_t;
 
-/* Initializes a winnowing context for windows of length K. */
-int moss_winnow_init(moss_winnow_t *winnow, size_t k);
+/* Initializes a winnowing context for windows of length W. */
+int moss_winnow_init(moss_winnow_t *winnow, size_t w);
 
 /* Frees a winnowing context. */
 void moss_winnow_free(moss_winnow_t *winnow);
