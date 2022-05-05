@@ -5,6 +5,7 @@
 #include <string.h>
 #include <libmoss/hashing.h>
 #include <libmoss/internal/multimap.h>
+#include <libmoss/moss.h>
 #include <libmoss/winnowing.h>
 
 static void test_multimap(void) {
@@ -143,8 +144,19 @@ static void test_winnow(void) {
     moss_winnow_free(&winnow);
 }
 
+static void test_moss(void) {
+    int ret;
+
+    moss_t moss;
+    ret = moss_init(&moss, 16, 64);
+    assert(!ret);
+
+    moss_free(&moss);
+}
+
 int main(void) {
     test_multimap();
     test_hashing();
     test_winnow();
+    test_moss();
 }
