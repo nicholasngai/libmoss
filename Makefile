@@ -7,12 +7,23 @@ OBJS = \
 	internal/multimap.o
 DEPS = $(OBJS:.o=.d)
 
+TOOLS_TARGETS =
+TOOLS_OBJS = $(TOOLS_TARGETS:=.o)
+TOOLS_DEPS = $(TOOLS_OBJS:.o=.d)
+
 CPPFLAGS = -MMD -Iinclude
 CFLAGS = -std=c11 -pedantic -pedantic-errors -O3 -Wall -Wextra
 LDFLAGS = -shared
 LDLIBS =
 
-all: $(TARGET_SO) $(TARGET_AR) test
+TOOLS_CPPFLAGS = -MMD -Iinclude
+TOOLS_CFLAGS = -std=c11 -pedantic -pedantic-errors -O3 -Wall -Wextra
+TOOLS_LDFLAGS = -L.
+TOOLS_LDLIBS = -lmoss
+
+all: $(TARGET_SO) $(TARGET_AR) $(TOOLS_TARGETS) test
+
+# libmoss library.
 
 $(TARGET_SO): $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $(TARGET_SO)
@@ -20,12 +31,27 @@ $(TARGET_SO): $(OBJS)
 $(TARGET_AR): $(OBJS)
 	$(AR) rcs $(TARGET_AR) $(OBJS)
 
-clean:
-	rm -rf $(TARGET_SO) $(TARGET_AR) $(OBJS) $(DEPS)
-	$(MAKE) -C test clean
+# libmoss tools.
+
+tools/%.o: CPPFLAGS = $(TOOLS_CPPFLAGS)
+tools/%.o: CFLAGS = $(TOOLS_CFLAGS)
+tools/%: LDFLAGS = $(TOOLS_LDFLAGS)
+tools/%: LDLIBS = $(TOOLS_LDLIBS)
+tools/%: tools/%.o $(TARGET_SO)
+	$(CC) $(LDFLAGS) $< $(LDLIBS) -o $@
+
+# Tester.
 
 test: $(TARGET_AR) FORCE
 	$(MAKE) -C test
+
+# Misc.
+
+clean:
+	rm -rf \
+		$(TARGET_SO) $(TARGET_AR) $(OBJS) $(DEPS) \
+		$(TOOLS_TARGETS) $(TOOLS_OBJS) $(TOOLS_DEPS)
+	$(MAKE) -C test clean
 
 FORCE:
 
