@@ -28,6 +28,7 @@ void moss_multimap_free(struct moss_multimap *multimap) {
     for (size_t i = 0; i < multimap->num_buckets; i++) {
         struct moss_multimap_bucket *bucket = multimap->buckets[i];
         while (bucket) {
+            free(bucket->vals);
             struct moss_multimap_bucket *next_bucket = bucket->next;
             free(bucket);
             bucket = next_bucket;
@@ -76,10 +77,16 @@ int moss_multimap_add(struct moss_multimap *restrict multimap, uint64_t key,
             goto exit;
         }
         new_bucket->key = key;
-        new_bucket->vals =
-            malloc(INITIAL_BUCKET_LEN * sizeof(*new_bucket->vals));
         new_bucket->vals_len = 0;
         new_bucket->vals_cap = INITIAL_BUCKET_LEN;
+        new_bucket->next = *bucket;
+        new_bucket->vals =
+            malloc(INITIAL_BUCKET_LEN * sizeof(*new_bucket->vals));
+        if (!new_bucket->vals) {
+            free(new_bucket);
+            ret = errno;
+            goto exit;
+        }
         *bucket = new_bucket;
     }
 
