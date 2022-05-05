@@ -7,7 +7,8 @@ OBJS = \
 	internal/multimap.o
 DEPS = $(OBJS:.o=.d)
 
-TOOLS_TARGETS =
+TOOLS_TARGETS = \
+	tools/moss
 TOOLS_OBJS = $(TOOLS_TARGETS:=.o)
 TOOLS_DEPS = $(TOOLS_OBJS:.o=.d)
 

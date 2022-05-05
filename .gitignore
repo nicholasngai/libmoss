@@ -3,4 +3,5 @@
 *.a
 *.d
 test/test
+tools/moss
 tokenizers/go/tokenizer
