@@ -40,7 +40,7 @@ static void test_multimap(void) {
         assert(vals[1] == i + 200);
     }
 
-    moss_multimap_free(&multimap);
+    moss_multimap_free(&multimap, NULL);
 }
 
 static void test_hashing(void) {

@@ -24,10 +24,16 @@ exit:
     return ret;
 }
 
-void moss_multimap_free(struct moss_multimap *multimap) {
+void moss_multimap_free(struct moss_multimap *multimap,
+        void (*callback)(const void *val)) {
     for (size_t i = 0; i < multimap->num_buckets; i++) {
         struct moss_multimap_bucket *bucket = multimap->buckets[i];
         while (bucket) {
+            if (callback) {
+                for (size_t i = 0; i < bucket->vals_len; i++) {
+                    callback(bucket->vals[i]);
+                }
+            }
             free(bucket->vals);
             struct moss_multimap_bucket *next_bucket = bucket->next;
             free(bucket);

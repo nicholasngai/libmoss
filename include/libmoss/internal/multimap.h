@@ -19,7 +19,8 @@ struct moss_multimap {
 };
 
 int moss_multimap_init(struct moss_multimap *multimap, size_t num_buckets);
-void moss_multimap_free(struct moss_multimap *multimap);
+void moss_multimap_free(struct moss_multimap *multimap,
+        void (*callback)(const void *val));
 
 bool moss_multimap_get(struct moss_multimap *multimap, uint64_t key,
         const void ***result, size_t *result_len);
