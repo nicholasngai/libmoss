@@ -91,7 +91,7 @@ int moss_input(moss_t *moss, int64_t doc, const uint64_t *tokens,
                 break;
             }
 
-            moss_print_entry_t *entry = malloc(sizeof(*entry));
+            moss_fingerprint_entry_t *entry = malloc(sizeof(*entry));
             if (!entry) {
                 ret = errno;
                 goto exit;

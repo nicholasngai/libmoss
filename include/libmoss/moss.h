@@ -8,10 +8,10 @@
 #include "libmoss/winnowing.h"
 
 /* A fingerprint entry for a document. */
-typedef struct moss_print_entry {
+typedef struct moss_fingerprint_entry {
     int64_t doc;
     uint64_t fingerprint;
-} moss_print_entry_t;
+} moss_fingerprint_entry_t;
 
 /* An instance of MOSS to determine similarity across documents. */
 typedef struct moss {
