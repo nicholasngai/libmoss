@@ -162,6 +162,7 @@ int main(int argc, char **argv) {
         goto exit;
     }
 
+    /* Process documents. */
     int64_t cur_doc = 1;
     for (; optind < argc; optind++) {
         ret = process_doc(&moss, parser_path, cur_doc, argv[optind]);
@@ -170,6 +171,29 @@ int main(int argc, char **argv) {
             goto exit_free_moss;
         }
         cur_doc++;
+    }
+
+    /* Dump matches. */
+    for (struct moss_multimap_iter iter =
+            moss_multimap_iter_begin(&moss.fingerprints);
+            moss_multimap_iter_finished(&iter);
+            moss_multimap_iter_next(&iter)) {
+        if (iter.bucket->vals_len == 1) {
+            /* Skip non-matches. */
+            continue;
+        }
+
+        /* Dump all pairs. */
+        for (size_t i = 0; i < iter.bucket->vals_len; i++) {
+            for (size_t j = i + 1; j < iter.bucket->vals_len; j++) {
+                moss_fingerprint_entry_t *entry1 = iter.bucket->vals[i];
+                moss_fingerprint_entry_t *entry2 = iter.bucket->vals[j];
+                if (entry1->doc == entry2->doc) {
+                    continue;
+                }
+                printf("(%lu, %lu)\n", entry1->doc, entry2->doc);
+            }
+        }
     }
 
 exit_free_moss:

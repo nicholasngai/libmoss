@@ -118,3 +118,42 @@ int moss_multimap_add(struct moss_multimap *restrict multimap, uint64_t key,
 exit:
     return ret;
 }
+
+struct moss_multimap_iter moss_multimap_iter_begin(
+        struct moss_multimap *multimap) {
+    struct moss_multimap_iter ret = {
+        .multimap = multimap,
+    };
+
+    for (size_t i = 0; i < ret.multimap->num_buckets; i++) {
+        if (ret.multimap->buckets[i]) {
+            ret.bucket = ret.multimap->buckets[i];
+            goto exit;
+        }
+    }
+
+    ret.bucket = NULL;
+
+exit:
+    return ret;
+}
+
+void moss_multimap_iter_next(struct moss_multimap_iter *iter) {
+    /* Check if the bucket has any next items. */
+    if (iter->bucket->next) {
+        iter->bucket = iter->bucket->next;
+        return;
+    }
+
+    /* Iterate over future hashes. */
+    for (size_t i = iter->bucket->key % iter->multimap->num_buckets + 1;
+            i < iter->multimap->num_buckets; i++) {
+        if (iter->multimap->buckets[i]) {
+            iter->bucket = iter->multimap->buckets[i];
+            return;
+        }
+    }
+
+    /* Iteration finished. */
+    iter->bucket = NULL;
+}
