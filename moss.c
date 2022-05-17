@@ -47,7 +47,7 @@ exit:
 }
 
 void moss_free(moss_t *moss) {
-    moss_multimap_free(&moss->fingerprints, (void (*)(const void *)) free);
+    moss_multimap_free(&moss->fingerprints, (void (*)(void *)) free);
     moss_hashing_free(&moss->doc_hashing);
     moss_winnow_free(&moss->doc_winnow);
     free(moss->hashes_buf);

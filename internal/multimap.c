@@ -25,7 +25,7 @@ exit:
 }
 
 void moss_multimap_free(struct moss_multimap *multimap,
-        void (*callback)(const void *val)) {
+        void (*callback)(void *val)) {
     for (size_t i = 0; i < multimap->num_buckets; i++) {
         struct moss_multimap_bucket *bucket = multimap->buckets[i];
         while (bucket) {
@@ -44,7 +44,7 @@ void moss_multimap_free(struct moss_multimap *multimap,
 }
 
 bool moss_multimap_get(struct moss_multimap *restrict multimap, uint64_t key,
-        const void ***restrict result, size_t *result_len) {
+        void ***restrict result, size_t *result_len) {
     uint64_t index = key % multimap->num_buckets;
 
     struct moss_multimap_bucket *bucket = multimap->buckets[index];
@@ -65,7 +65,7 @@ bool moss_multimap_get(struct moss_multimap *restrict multimap, uint64_t key,
 }
 
 int moss_multimap_add(struct moss_multimap *restrict multimap, uint64_t key,
-        const void *val) {
+        void *val) {
     int ret;
     uint64_t index = key % multimap->num_buckets;
 
@@ -99,7 +99,7 @@ int moss_multimap_add(struct moss_multimap *restrict multimap, uint64_t key,
     /* Resize the array if needed. */
     if ((*bucket)->vals_len == (*bucket)->vals_cap) {
         size_t new_cap = (*bucket)->vals_cap * 2;
-        const void **new_vals =
+        void **new_vals =
             realloc((*bucket)->vals, new_cap * sizeof(*(*bucket)->vals));
         if (!new_vals) {
             ret = errno;
