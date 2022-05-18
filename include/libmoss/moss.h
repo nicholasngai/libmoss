@@ -3,15 +3,10 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "libmoss/defs.h"
 #include "libmoss/hashing.h"
 #include "libmoss/internal/multimap.h"
 #include "libmoss/winnowing.h"
-
-/* A fingerprint entry for a document. */
-typedef struct moss_fingerprint_entry {
-    int64_t doc;
-    uint64_t fingerprint;
-} moss_fingerprint_entry_t;
 
 /* An instance of MOSS to determine similarity across documents. */
 typedef struct moss {
@@ -35,7 +30,7 @@ typedef struct moss {
     moss_winnow_t doc_winnow;
 
     /* Buffer to hold hashes output by the hashing context. */
-    uint64_t *hashes_buf;
+    moss_hash_t *hashes_buf;
 } moss_t;
 
 /* Initializes the MOSS instance with the given parameters of K and W. */
@@ -49,7 +44,7 @@ void moss_free(moss_t *moss);
  * the tokens of the same document. Otherwise, DOC must be unique across all
  * calls to moss_input (i.e. it is undefined to input tokens for DOC == 1, then
  * DOC == 2, then DOC == 1). */
-int moss_input(moss_t *moss, int64_t doc, const uint64_t *tokens,
+int moss_input(moss_t *moss, int64_t doc, const moss_token_t *tokens,
         size_t tokens_len);
 
 #endif /* libmoss/moss.h */

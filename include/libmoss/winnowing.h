@@ -3,14 +3,14 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
+#include "libmoss/defs.h"
 
 typedef struct moss_winnow {
     /* Size of the window. */
     size_t w;
     /* Current window. This is a circular buffer that starts at
      * WINDOW[WINDOW_IDX] and ends at WINDOW[WINDOW_IDX - 1 % W] */
-    uint64_t *window;
+    moss_hash_t *window;
     /* Current window start position. */
     size_t window_idx;
     /* Current window minimum hash index. */
@@ -34,7 +34,7 @@ void moss_winnow_free(moss_winnow_t *winnow);
  * If the return value is non-zero and less than LEN, the value is the index of
  * the first hash value not yet read into the windowa, nd the next call to
  * winnow should start at &HASHES[ret] and have length LEN - ret. */
-size_t moss_winnow_process(moss_winnow_t *winnow, const uint64_t *hashes,
-        size_t len, uint64_t *fingerprint);
+size_t moss_winnow_process(moss_winnow_t *winnow, const moss_hash_t *hashes,
+        size_t len, moss_hash_t *fingerprint);
 
 #endif /* libmoss/winnowing.h */

@@ -53,7 +53,7 @@ void moss_free(moss_t *moss) {
     free(moss->hashes_buf);
 }
 
-int moss_input(moss_t *moss, int64_t doc, const uint64_t *tokens,
+int moss_input(moss_t *moss, int64_t doc, const moss_token_t *tokens,
         size_t tokens_len) {
     int ret;
 
@@ -80,7 +80,7 @@ int moss_input(moss_t *moss, int64_t doc, const uint64_t *tokens,
         /* Winnow the hashes and feed each one to the hash map. */
         size_t hashes_winnowed = 0;
         while (ret) {
-            uint64_t fingerprint;
+            moss_hash_t fingerprint;
             ret =
                 moss_winnow_process(&moss->doc_winnow,
                     moss->hashes_buf + hashes_winnowed,
@@ -91,15 +91,14 @@ int moss_input(moss_t *moss, int64_t doc, const uint64_t *tokens,
                 break;
             }
 
-            moss_fingerprint_entry_t *entry = malloc(sizeof(*entry));
+            moss_hash_t *entry = malloc(sizeof(*entry));
             if (!entry) {
                 ret = errno;
                 goto exit;
             }
-            entry->doc = doc;
-            entry->fingerprint = fingerprint;
+            *entry = fingerprint;
 
-            ret = moss_multimap_add(&moss->fingerprints, fingerprint, entry);
+            ret = moss_multimap_add(&moss->fingerprints, entry->hash, entry);
             if (ret == -1) {
                 free(entry);
                 goto exit;

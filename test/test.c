@@ -44,15 +44,41 @@ static void test_multimap(void) {
 }
 
 static void test_hashing(void) {
-    static const uint64_t tokens[] = {
-        77, 74, 42, 17, 98, 50, 17, 98, 8, 88, 67, 39, 77, 74, 42, 17, 98
+    static const moss_token_t tokens[] = {
+        { .token = 77, .doc = 1 },
+        { .token = 74, .doc = 1 },
+        { .token = 42, .doc = 1 },
+        { .token = 17, .doc = 1 },
+        { .token = 98, .doc = 1 },
+        { .token = 50, .doc = 1 },
+        { .token = 17, .doc = 1 },
+        { .token = 98, .doc = 1 },
+        { .token = 8, .doc = 1 },
+        { .token = 88, .doc = 1 },
+        { .token = 67, .doc = 1 },
+        { .token = 39, .doc = 1 },
+        { .token = 77, .doc = 1 },
+        { .token = 74, .doc = 1 },
+        { .token = 42, .doc = 1 },
+        { .token = 17, .doc = 1 },
+        { .token = 98, .doc = 1 },
     };
-    static const uint64_t expected[] = {
-        210681571385, 210676839038, 210638077733, 210611287325, 210705588596,
-        210647563786, 210611243899, 210704155569, 210600273884, 210694363646,
-        210668494320, 210636649790, 210681571385,
+    static const moss_hash_t expected[] = {
+        { .hash = 210681571385, .doc = 1 },
+        { .hash = 210676839038, .doc = 1 },
+        { .hash = 210638077733, .doc = 1 },
+        { .hash = 210611287325, .doc = 1 },
+        { .hash = 210705588596, .doc = 1 },
+        { .hash = 210647563786, .doc = 1 },
+        { .hash = 210611243899, .doc = 1 },
+        { .hash = 210704155569, .doc = 1 },
+        { .hash = 210600273884, .doc = 1 },
+        { .hash = 210694363646, .doc = 1 },
+        { .hash = 210668494320, .doc = 1 },
+        { .hash = 210636649790, .doc = 1 },
+        { .hash = 210681571385, .doc = 1 },
     };
-    uint64_t result[13];
+    moss_hash_t result[13];
     size_t result_len = 0;
     moss_hashing_t hashing;
     int ret;
@@ -111,11 +137,33 @@ static void test_hashing(void) {
 }
 
 static void test_winnow(void) {
-    static const uint64_t hashes[] = {
-        77, 74, 42, 17, 98, 50, 17, 98, 8, 88, 67, 39, 77, 74, 42, 17, 98
+    static const moss_hash_t hashes[] = {
+        { .hash = 77, .doc = 1 },
+        { .hash = 74, .doc = 1 },
+        { .hash = 42, .doc = 1 },
+        { .hash = 17, .doc = 1 },
+        { .hash = 98, .doc = 1 },
+        { .hash = 50, .doc = 1 },
+        { .hash = 17, .doc = 1 },
+        { .hash = 98, .doc = 1 },
+        { .hash = 8, .doc = 1 },
+        { .hash = 88, .doc = 1 },
+        { .hash = 67, .doc = 1 },
+        { .hash = 39, .doc = 1 },
+        { .hash = 77, .doc = 1 },
+        { .hash = 74, .doc = 1 },
+        { .hash = 42, .doc = 1 },
+        { .hash = 17, .doc = 1 },
+        { .hash = 98, .doc = 1 },
     };
-    static const uint64_t expected[] = { 17, 17, 8, 39, 17 };
-    uint64_t result[5];
+    static const moss_hash_t expected[] = {
+        { .hash = 17, .doc = 1 },
+        { .hash = 17, .doc = 1 },
+        { .hash = 8, .doc = 1 },
+        { .hash = 39, .doc = 1 },
+        { .hash = 17, .doc = 1 },
+    };
+    moss_hash_t result[5];
     size_t result_len = 0;
     moss_winnow_t winnow;
     int ret;
@@ -126,7 +174,7 @@ static void test_winnow(void) {
     size_t hashes_read;
     size_t start = 0;
     do {
-        uint64_t fingerprint;
+        moss_hash_t fingerprint;
         hashes_read =
             moss_winnow_process(&winnow, hashes + start,
                 sizeof(hashes) / sizeof(*hashes) - start, &fingerprint);

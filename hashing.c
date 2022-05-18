@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "libmoss/defs.h"
 #include "libmoss/internal/defs.h"
 
 struct hash_djb2 {
@@ -53,13 +54,13 @@ void moss_hashing_free(moss_hashing_t *hashing) {
 }
 
 void moss_hashing_input_tokens(moss_hashing_t *restrict hashing,
-        const uint64_t *restrict tokens, size_t len) {
+        const moss_token_t *restrict tokens, size_t len) {
     hashing->input = tokens;
     hashing->input_len = len;
 }
 
 int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
-        uint64_t *restrict hashes, size_t hashes_len) {
+        moss_hash_t *restrict hashes, size_t hashes_len) {
     size_t total_tokens_read = 0;
     size_t tokens_read;
     int ret;
@@ -76,9 +77,13 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
             goto exit;
         }
 
+        /* Metadata. */
+        hashes[total_tokens_read + tokens_read].doc =
+            hashing->prev_tokens[tokens_read].doc;
+
         /* Hash first part of run from prev_tokens. */
         for (size_t i = tokens_read; i < hashing->prev_tokens_len; i++) {
-            ret = hash_djb2_feed(&hash, hashing->prev_tokens[i]);
+            ret = hash_djb2_feed(&hash, hashing->prev_tokens[i].token);
             if (ret) {
                 goto exit;
             }
@@ -88,7 +93,7 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
         for (size_t i = 0;
                 i < hashing->k - (hashing->prev_tokens_len - tokens_read);
                 i++) {
-            ret = hash_djb2_feed(&hash, hashing->input[i]);
+            ret = hash_djb2_feed(&hash, hashing->input[i].token);
             if (ret) {
                 goto exit;
             }
@@ -96,7 +101,7 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
 
         ret =
             hash_djb2_finalize(&hash,
-                    &hashes[total_tokens_read + tokens_read]);
+                    &hashes[total_tokens_read + tokens_read].hash);
         if (ret) {
             goto exit;
         }
@@ -120,8 +125,13 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
             goto exit;
         }
 
+        /* Metadata. */
+        hashes[total_tokens_read + tokens_read].doc =
+            hashing->input[tokens_read].doc;
+
+        /* Hash run from input. */
         for (size_t i = tokens_read; i < tokens_read + hashing->k; i++) {
-            ret = hash_djb2_feed(&hash, hashing->input[i]);
+            ret = hash_djb2_feed(&hash, hashing->input[i].token);
             if (ret) {
                 goto exit;
             }
@@ -129,7 +139,7 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
 
         ret =
             hash_djb2_finalize(&hash,
-                    &hashes[total_tokens_read + tokens_read]);
+                    &hashes[total_tokens_read + tokens_read].hash);
         if (ret) {
             goto exit;
         }

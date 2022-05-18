@@ -73,9 +73,10 @@ static int process_doc(moss_t *moss, char *parser_path,
     }
     fds[0] = -1;
 
+    moss_token_t token;
+    token.doc = doc;
     while (1) {
         /* Get token from stdin. */
-        uint64_t token;
         char buf[128];
         if (!fgets(buf, sizeof(buf), input)) {
             break;
@@ -84,7 +85,7 @@ static int process_doc(moss_t *moss, char *parser_path,
             break;
         }
         char *end;
-        token = strtoull(buf, &end, 10);
+        token.token = strtoull(buf, &end, 10);
         if (*end != '\n') {
             fprintf(stderr, "Invalid token in token stream\n");
             ret = -1;
@@ -186,8 +187,8 @@ int main(int argc, char **argv) {
         /* Dump all pairs. */
         for (size_t i = 0; i < iter.bucket->vals_len; i++) {
             for (size_t j = i + 1; j < iter.bucket->vals_len; j++) {
-                moss_fingerprint_entry_t *entry1 = iter.bucket->vals[i];
-                moss_fingerprint_entry_t *entry2 = iter.bucket->vals[j];
+                moss_hash_t *entry1 = iter.bucket->vals[i];
+                moss_hash_t *entry2 = iter.bucket->vals[j];
                 if (entry1->doc == entry2->doc) {
                     continue;
                 }
