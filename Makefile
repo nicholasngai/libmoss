@@ -15,6 +15,10 @@ TOOLS_DEPS = $(TOOLS_OBJS:.o=.d)
 TOKENIZER_TARGETS = \
 	tools/moss_tokenizer_go
 
+TEST_TARGET = test/test
+TEST_OBJ = $(TEST_TARGET:=.o)
+TEST_DEP = $(TEST_TARGET:=.d)
+
 CPPFLAGS = -MMD -Iinclude
 CFLAGS = -std=c11 -pedantic -pedantic-errors -O3 -Wall -Wextra
 LDFLAGS = -shared
@@ -25,10 +29,15 @@ TOOLS_CFLAGS = -std=c11 -pedantic -pedantic-errors -O3 -Wall -Wextra
 TOOLS_LDFLAGS = -L.
 TOOLS_LDLIBS = -lmoss
 
+TEST_CPPFLAGS = -MMD -Iinclude
+TEST_CFLAGS = -Wall -Wextra -g
+TEST_LDFLAGS =
+TEST_LDLIBS =
+
 all: $(TARGET_SO) $(TARGET_AR) \
 	$(TOOLS_TARGETS) \
 	$(TOKENIZER_TARGETS) \
-	test
+	$(TEST_TARGET)
 
 # libmoss library.
 
@@ -54,8 +63,12 @@ tools/moss_tokenizer_go: tools/tokenizers/go/moss_tokenizer_go.go
 
 # Tester.
 
-test: $(TARGET_AR) FORCE
-	$(MAKE) -C test
+$(TEST_TARGET): CPPFLAGS = $(TEST_CPPFLAGS)
+$(TEST_TARGET): CFLAGS = $(TEST_CFLAGS)
+$(TEST_TARGET): LDFLAGS = $(TEST_LDFLAGS)
+$(TEST_TARGET): LDLIBS = $(TEST_LDLIBS)
+$(TEST_TARGET): $(TEST_OBJ) $(TARGET_AR)
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 # Misc.
 
@@ -63,9 +76,7 @@ clean:
 	rm -rf \
 		$(TARGET_SO) $(TARGET_AR) $(OBJS) $(DEPS) \
 		$(TOOLS_TARGETS) $(TOOLS_OBJS) $(TOOLS_DEPS) \
-		$(TOKENIZER_TARGETS)
-	$(MAKE) -C test clean
+		$(TOKENIZER_TARGETS) \
+		$(TEST_TARGET) $(TEST_OBJ) $(TEST_DEP)
 
-FORCE:
-
--include $(DEPS) $(TOOLS_DEPS)
+-include $(DEPS) $(TOOLS_DEPS) $(TEST_DEP)
