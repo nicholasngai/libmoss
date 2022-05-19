@@ -31,8 +31,8 @@ func main() {
 	s.Init(file, data, nil, 0)
 
 	for {
-		_, tok, _ := s.Scan()
-		fmt.Println(int(tok))
+		pos, tok, _ := s.Scan()
+		fmt.Println(int(tok), pos)
 		if tok == token.EOF {
 			break
 		}

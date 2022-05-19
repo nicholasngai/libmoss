@@ -84,15 +84,23 @@ static int process_doc(moss_t *moss, char *parser_path,
         if (buf[0] == '\n') {
             break;
         }
-        char *end;
-        token.token = strtoull(buf, &end, 10);
-        if (*end != '\n') {
-            fprintf(stderr, "Invalid token in token stream\n");
-            ret = -1;
-            goto exit_close_input;
-        }
-        if (ret == -1) {
-            continue;
+        char *end = buf;
+        token.token = strtoull(end, &end, 10);
+        if (*end == '\n') {
+            token.pos = 0;
+        } else {
+            if (*end != ' ' || !*(end + 1) || *(end + 1) == '\n') {
+                fprintf(stderr, "Invalid token in token stream\n");
+                ret = -1;
+                goto exit_close_input;
+            }
+            end++;
+            token.pos = strtoul(end, &end, 10);
+            if (*end != '\n') {
+                fprintf(stderr, "Invalid token in token stream\n");
+                ret = -1;
+                goto exit_close_input;
+            }
         }
 
         /* Feed token to MOSS. */
@@ -102,6 +110,8 @@ static int process_doc(moss_t *moss, char *parser_path,
             goto exit_close_input;
         }
     }
+
+    ret = 0;
 
 exit_close_input:
     fclose(input);
@@ -192,7 +202,9 @@ int main(int argc, char **argv) {
                 if (entry1->doc == entry2->doc) {
                     continue;
                 }
-                printf("(%lu, %lu)\n", entry1->doc, entry2->doc);
+                printf("(%lu:%lu-%lu, %lu:%lu-%lu)\n",
+                        entry1->doc, entry1->start_pos, entry1->end_pos,
+                        entry2->doc, entry2->start_pos, entry2->end_pos);
             }
         }
     }

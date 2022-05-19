@@ -82,6 +82,12 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
         /* Metadata. */
         hashes[total_tokens_read + tokens_read].doc =
             hashing->prev_tokens[tokens_read].doc;
+        hashes[total_tokens_read + tokens_read].start_pos =
+            hashing->prev_tokens[tokens_read].pos;
+        hashes[total_tokens_read + tokens_read].end_pos =
+            hashing->input[
+                hashing->k - (hashing->prev_tokens_len - tokens_read)]
+                .pos;
 
         /* Hash first part of run from prev_tokens. */
         for (size_t i = tokens_read; i < hashing->prev_tokens_len; i++) {
@@ -132,6 +138,10 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
         /* Metadata. */
         hashes[total_tokens_read + tokens_read].doc =
             hashing->input[tokens_read].doc;
+        hashes[total_tokens_read + tokens_read].start_pos =
+            hashing->input[tokens_read].pos;
+        hashes[total_tokens_read + tokens_read].end_pos =
+            hashing->input[tokens_read + hashing->k].pos;
 
         /* Hash run from input. */
         for (size_t i = tokens_read; i < tokens_read + hashing->k; i++) {
