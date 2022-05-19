@@ -22,14 +22,13 @@ typedef struct moss {
     /* The current document being fingerprinted. */
     moss_doc_t *doc;
 
-    /* The hashing instance for the current document. */
-    moss_hashing_t doc_hashing;
+    /* The default hashing instance for the current document, for
+     * single-threaded use. */
+    moss_hashing_t default_hashing;
 
-    /* The winnowing instance for the current document's hashes. */
-    moss_winnow_t doc_winnow;
-
-    /* Buffer to hold hashes output by the hashing context. */
-    moss_hash_t *hashes_buf;
+    /* The winnowing instance for the current document's hashes, for
+     * single-threaded use. */
+    moss_winnow_t default_winnow;
 } moss_t;
 
 /* Initializes the MOSS instance with the given parameters of K and W. */
@@ -45,5 +44,11 @@ void moss_free(moss_t *moss);
  * DOC == 2, then DOC == 1). */
 int moss_input(moss_t *moss, moss_doc_t *doc, const moss_token_t *tokens,
         size_t tokens_len);
+
+/* Same as moss_input, except that the given hashing and winnowing contexts are
+ * used instead of the default contexts. This is useful for threaded
+ * applications. */
+int moss_input_threaded(moss_t *moss, moss_hashing_t *hashing,
+        moss_winnow_t *winnow, const moss_token_t *tokens, size_t tokens_len);
 
 #endif /* libmoss/moss.h */

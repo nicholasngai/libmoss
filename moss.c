@@ -19,26 +19,19 @@ int moss_init(moss_t *moss, size_t k, size_t w) {
     if (ret) {
         goto exit;
     }
-    ret = moss_hashing_init(&moss->doc_hashing, moss->k);
+    ret = moss_hashing_init(&moss->default_hashing, moss->k);
     if (ret) {
         goto exit_free_fingerprints;
     }
-    ret = moss_winnow_init(&moss->doc_winnow, moss->w);
+    ret = moss_winnow_init(&moss->default_winnow, moss->w);
     if (ret) {
         goto exit_free_hashing;
-    }
-    moss->hashes_buf = malloc(HASHES_BUF_LEN * sizeof(*moss->hashes_buf));
-    if (!moss->hashes_buf) {
-        ret = errno;
-        goto exit_free_winnow;
     }
 
     return 0;
 
-exit_free_winnow:
-    moss_winnow_free(&moss->doc_winnow);
 exit_free_hashing:
-    moss_hashing_free(&moss->doc_hashing);
+    moss_hashing_free(&moss->default_hashing);
 exit_free_fingerprints:
     moss_multimap_free(&moss->fingerprints, NULL);
 exit:
@@ -47,30 +40,33 @@ exit:
 
 void moss_free(moss_t *moss) {
     moss_multimap_free(&moss->fingerprints, (void (*)(void *)) free);
-    moss_hashing_free(&moss->doc_hashing);
-    moss_winnow_free(&moss->doc_winnow);
-    free(moss->hashes_buf);
+    moss_hashing_free(&moss->default_hashing);
+    moss_winnow_free(&moss->default_winnow);
 }
 
 int moss_input(moss_t *moss, moss_doc_t *doc, const moss_token_t *tokens,
         size_t tokens_len) {
-    int ret;
-
     if (moss->doc != doc) {
-        moss_hashing_reset(&moss->doc_hashing);
-        moss_winnow_reset(&moss->doc_winnow);
+        moss_hashing_reset(&moss->default_hashing);
+        moss_winnow_reset(&moss->default_winnow);
         moss->doc = doc;
     }
+    return moss_input_threaded(moss, &moss->default_hashing,
+            &moss->default_winnow, tokens, tokens_len);
+}
+
+int moss_input_threaded(moss_t *moss, moss_hashing_t *hashing,
+        moss_winnow_t *winnow, const moss_token_t *tokens, size_t tokens_len) {
+    int ret;
 
     /* Input tokens to hashing. */
-    moss_hashing_input_tokens(&moss->doc_hashing, tokens, tokens_len);
+    moss_hashing_input_tokens(hashing, tokens, tokens_len);
 
     size_t hashes_read;
     do {
         /* Get some hashes. */
-        ret =
-            moss_hashing_get_hashes(&moss->doc_hashing, moss->hashes_buf,
-                    HASHES_BUF_LEN);
+        moss_hash_t hashes_buf[HASHES_BUF_LEN];
+        ret = moss_hashing_get_hashes(hashing, hashes_buf, HASHES_BUF_LEN);
         if (ret < 0) {
             goto exit;
         }
@@ -81,9 +77,8 @@ int moss_input(moss_t *moss, moss_doc_t *doc, const moss_token_t *tokens,
         while (ret) {
             moss_hash_t fingerprint;
             ret =
-                moss_winnow_process(&moss->doc_winnow,
-                    moss->hashes_buf + hashes_winnowed,
-                    hashes_read - hashes_winnowed, &fingerprint);
+                moss_winnow_process(winnow, hashes_buf + hashes_winnowed,
+                        hashes_read - hashes_winnowed, &fingerprint);
             hashes_winnowed += ret;
 
             if (!ret) {
