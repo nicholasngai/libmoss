@@ -2,12 +2,14 @@
 #include <errno.h>
 #include <limits.h>
 #include <signal.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <threads.h>
 #include <unistd.h>
 #include <libmoss/moss.h>
 #include "libmoss/internal/utils.h"
@@ -20,12 +22,15 @@ enum moss_language {
 moss_doc_t **all_docs;
 size_t all_docs_len;
 size_t all_docs_cap;
+mtx_t all_docs_lock;
 
 static void show_help(char *name) {
     printf("usage: %s -lLANGUAGE FILE [FILE...]\n", name);
 }
 
 static moss_doc_t *alloc_doc(int64_t doc_id, char *filename) {
+    int ret;
+
     /* Allocate document. */
     moss_doc_t *doc = malloc(sizeof(*doc));
     if (!doc) {
@@ -34,6 +39,12 @@ static moss_doc_t *alloc_doc(int64_t doc_id, char *filename) {
     }
     doc->id = doc_id;
     doc->path = filename;
+
+    ret = mtx_lock(&all_docs_lock);
+    if (ret) {
+        perror("Error locking mutex");
+        goto exit_free_doc;
+    }
 
     /* Extend array if needed. */
     if (all_docs_len == all_docs_cap) {
@@ -50,6 +61,8 @@ static moss_doc_t *alloc_doc(int64_t doc_id, char *filename) {
 
     all_docs_len += 1;
     all_docs[all_docs_len - 1] = doc;
+
+    mtx_unlock(&all_docs_lock);
 
     return doc;
 
@@ -120,11 +133,26 @@ static int process_doc(moss_t *moss, char *parser_path,
     }
     fds[0] = -1;
 
+    /* Allocate document, hashing, and winnow.. */
     moss_doc_t *doc = alloc_doc(doc_id, filename);
     if (!doc) {
         perror("Error allocating document");
         goto exit_close_input;
     }
+    moss_hashing_t hashing;
+    ret = moss_hashing_init(&hashing, moss->k);
+    if (ret) {
+        fprintf(stderr, "Error allocating hashing context\n");
+        goto exit_close_input;
+    }
+    moss_winnow_t winnow;
+    ret = moss_winnow_init(&winnow, moss->w);
+    if (ret) {
+        fprintf(stderr, "Error allocating winnow context\n");
+        goto exit_free_hashing;
+    }
+
+    /* Process. */
     moss_token_t token;
     token.doc = doc;
     while (1) {
@@ -144,27 +172,31 @@ static int process_doc(moss_t *moss, char *parser_path,
             if (*end != ' ' || !*(end + 1) || *(end + 1) == '\n') {
                 fprintf(stderr, "Invalid token in token stream\n");
                 ret = -1;
-                goto exit_close_input;
+                goto exit_free_winnow;
             }
             end++;
             token.pos = strtoul(end, &end, 10);
             if (*end != '\n') {
                 fprintf(stderr, "Invalid token in token stream\n");
                 ret = -1;
-                goto exit_close_input;
+                goto exit_free_winnow;
             }
         }
 
         /* Feed token to MOSS. */
-        ret = moss_input(moss, doc, &token, 1);
+        ret = moss_input_threaded(moss, &hashing, &winnow, &token, 1);
         if (ret) {
             fprintf(stderr, "Error feeding token to MOSS\n");
-            goto exit_close_input;
+            goto exit_free_winnow;
         }
     }
 
     ret = 0;
 
+exit_free_winnow:
+    moss_winnow_free(&winnow);
+exit_free_hashing:
+    moss_hashing_free(&hashing);
 exit_close_input:
     fclose(input);
 exit_kill_child:
@@ -227,14 +259,24 @@ int main(int argc, char **argv) {
     }
 
     /* Process documents. */
-    int64_t cur_doc = 1;
-    for (; optind < argc; optind++) {
-        ret = process_doc(&moss, parser_path, cur_doc, argv[optind]);
-        if (ret) {
-            fprintf(stderr, "Error processing doc: %s\n", argv[optind]);
-            goto exit_free_moss;
+    atomic_int parallel_ret = 0;
+    #pragma omp parallel
+    #pragma omp for
+    for (size_t i = 0; i < (size_t) argc - optind; i++) {
+        int64_t doc_id = i + 1;
+        char *filename = argv[i + optind];
+        int process_ret = process_doc(&moss, parser_path, doc_id, filename);
+        if (process_ret) {
+            int expected = 0;
+            atomic_compare_exchange_strong(&parallel_ret, &expected,
+                    process_ret);
+            fprintf(stderr, "Error processing doc: %s\n", filename);
+            #pragma omp cancel for
         }
-        cur_doc++;
+    }
+    ret = parallel_ret;
+    if (ret) {
+        goto exit_free_moss;
     }
 
     /* Dump matches. */

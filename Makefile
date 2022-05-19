@@ -26,8 +26,10 @@ LDLIBS = \
 	-lpthread
 
 TOOLS_CPPFLAGS = -MMD -Iinclude
-TOOLS_CFLAGS = -std=c11 -pedantic -pedantic-errors -O3 -Wall -Wextra
-TOOLS_LDFLAGS = -L.
+TOOLS_CFLAGS = -std=c11 -pedantic -pedantic-errors -O3 -Wall -Wextra \
+	-fopenmp
+TOOLS_LDFLAGS = -L. \
+	-fopenmp
 TOOLS_LDLIBS = -lmoss \
 	-lpthread
 
