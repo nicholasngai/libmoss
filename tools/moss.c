@@ -101,8 +101,7 @@ static int process_doc(moss_t *moss, char *parser_path,
             perror("tokenizer: Error closing stdin");
             exit(-1);
         }
-        char *argv[] = { parser_path, filename, NULL };
-        ret = execv(parser_path, argv);
+        ret = execlp(parser_path, parser_path, filename);
         if (ret) {
             perror("tokenizer: Error executing tokenizer");
             exit(-1);
@@ -213,8 +212,9 @@ int main(int argc, char **argv) {
     parser_path[strnlen(parser_path, sizeof(parser_path) - 1)] = '\0';
     moss_dirname(parser_path);
     size_t path_len = strlen(parser_path);
-    strncat(parser_path, "/moss_tokenizer_", sizeof(parser_path) - path_len - 1);
-    path_len += strlen("/moss_tokenizer_");
+    strncat(parser_path, path_len > 0 ? "/moss_tokenizer_" : "moss_tokenizer_",
+            sizeof(parser_path) - path_len - 1);
+    path_len += strlen(path_len > 0 ? "/moss_tokenizer_" : "moss_tokenizer_");
     strncat(parser_path, language_str, sizeof(parser_path) - path_len - 1);
     path_len += strlen(language_str);
 
