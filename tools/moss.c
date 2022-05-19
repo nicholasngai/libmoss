@@ -1,6 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
 #include <errno.h>
-#include <libgen.h>
 #include <limits.h>
 #include <signal.h>
 #include <stdint.h>
@@ -11,6 +10,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <libmoss/moss.h>
+#include "libmoss/internal/utils.h"
 
 enum moss_language {
     LANG_NONE = 0,
@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
     /* Load parser. */
     strncpy(parser_path, argv[0], sizeof(parser_path) - 1);
     parser_path[strnlen(parser_path, sizeof(parser_path) - 1)] = '\0';
-    dirname(parser_path);
+    moss_dirname(parser_path);
     size_t path_len = strlen(parser_path);
     strncat(parser_path, "/moss_tokenizer_", sizeof(parser_path) - path_len - 1);
     path_len += strlen("/moss_tokenizer_");
