@@ -2,7 +2,6 @@
 #define LIBMOSS_MOSS_H
 
 #include <stddef.h>
-#include <stdint.h>
 #include "libmoss/defs.h"
 #include "libmoss/hashing.h"
 #include "libmoss/internal/multimap.h"
@@ -21,7 +20,7 @@ typedef struct moss {
     struct moss_multimap fingerprints;
 
     /* The current document being fingerprinted. */
-    int64_t doc;
+    moss_doc_t *doc;
 
     /* The hashing instance for the current document. */
     moss_hashing_t doc_hashing;
@@ -44,7 +43,7 @@ void moss_free(moss_t *moss);
  * the tokens of the same document. Otherwise, DOC must be unique across all
  * calls to moss_input (i.e. it is undefined to input tokens for DOC == 1, then
  * DOC == 2, then DOC == 1). */
-int moss_input(moss_t *moss, int64_t doc, const moss_token_t *tokens,
+int moss_input(moss_t *moss, moss_doc_t *doc, const moss_token_t *tokens,
         size_t tokens_len);
 
 #endif /* libmoss/moss.h */

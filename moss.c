@@ -1,7 +1,6 @@
 #include "libmoss/moss.h"
 #include <errno.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include "libmoss/hashing.h"
 #include "libmoss/internal/multimap.h"
@@ -15,7 +14,7 @@ int moss_init(moss_t *moss, size_t k, size_t w) {
 
     moss->k = k;
     moss->w = w;
-    moss->doc = -1;
+    moss->doc = NULL;
     ret = moss_multimap_init(&moss->fingerprints, FINGERPRINTS_MAP_SIZE);
     if (ret) {
         goto exit;
@@ -53,7 +52,7 @@ void moss_free(moss_t *moss) {
     free(moss->hashes_buf);
 }
 
-int moss_input(moss_t *moss, int64_t doc, const moss_token_t *tokens,
+int moss_input(moss_t *moss, moss_doc_t *doc, const moss_token_t *tokens,
         size_t tokens_len) {
     int ret;
 

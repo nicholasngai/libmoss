@@ -17,12 +17,60 @@ enum moss_language {
     LANG_GO,
 };
 
+moss_doc_t **all_docs;
+size_t all_docs_len;
+size_t all_docs_cap;
+
 static void show_help(char *name) {
     printf("usage: %s -lLANGUAGE FILE [FILE...]\n", name);
 }
 
+static moss_doc_t *alloc_doc(int64_t doc_id, char *filename) {
+    /* Allocate document. */
+    moss_doc_t *doc = malloc(sizeof(*doc));
+    if (!doc) {
+        perror("Error allocating document");
+        goto exit;
+    }
+    doc->id = doc_id;
+    doc->path = filename;
+
+    /* Extend array if needed. */
+    if (all_docs_len == all_docs_cap) {
+        size_t new_cap = all_docs_cap ? all_docs_cap * 2 : 256;
+        moss_doc_t **new_all_docs =
+            realloc(all_docs, new_cap * sizeof(moss_doc_t *));
+        if (!new_all_docs) {
+            perror("Error extending doc array");
+            goto exit_free_doc;
+        }
+        all_docs = new_all_docs;
+        all_docs_cap = new_cap;
+    }
+
+    all_docs_len += 1;
+    all_docs[all_docs_len - 1] = doc;
+
+    return doc;
+
+exit_free_doc:
+    free(doc);
+exit:
+    return NULL;
+}
+
+static void free_docs(void) {
+    for (size_t i = 0; i < all_docs_len; i++) {
+        free(all_docs[i]);
+    }
+    free(all_docs);
+    all_docs = NULL;
+    all_docs_len = 0;
+    all_docs_cap = 0;
+}
+
 static int process_doc(moss_t *moss, char *parser_path,
-        int64_t doc, char *filename) {
+        int64_t doc_id, char *filename) {
     int ret;
 
     /* Open parser. */
@@ -73,6 +121,11 @@ static int process_doc(moss_t *moss, char *parser_path,
     }
     fds[0] = -1;
 
+    moss_doc_t *doc = alloc_doc(doc_id, filename);
+    if (!doc) {
+        perror("Error allocating document");
+        goto exit_close_input;
+    }
     moss_token_t token;
     token.doc = doc;
     while (1) {
@@ -202,13 +255,14 @@ int main(int argc, char **argv) {
                 if (entry1->doc == entry2->doc) {
                     continue;
                 }
-                printf("(%lu:%lu-%lu, %lu:%lu-%lu)\n",
-                        entry1->doc, entry1->start_pos, entry1->end_pos,
-                        entry2->doc, entry2->start_pos, entry2->end_pos);
+                printf("(%s:%lu-%lu, %s:%lu-%lu)\n",
+                        entry1->doc->path, entry1->start_pos, entry1->end_pos,
+                        entry2->doc->path, entry2->start_pos, entry2->end_pos);
             }
         }
     }
 
+    free_docs();
 exit_free_moss:
     moss_free(&moss);
 exit:
