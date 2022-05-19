@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <threads.h>
 
 #define INITIAL_BUCKET_LEN 8
 
@@ -17,8 +18,10 @@ int moss_multimap_init(struct moss_multimap *multimap, size_t num_buckets) {
         ret = errno;
         goto exit;
     }
-
-    ret = 0;
+    ret = mtx_init(&multimap->lock, mtx_plain);
+    if (ret) {
+        goto exit;
+    }
 
 exit:
     return ret;
@@ -68,9 +71,26 @@ int moss_multimap_add(struct moss_multimap *restrict multimap, uint64_t key,
         void *val) {
     int ret;
     uint64_t index = key % multimap->num_buckets;
+    mtx_t *cur_lock;
+
+    ret = mtx_lock(&multimap->lock);
+    if (ret) {
+        goto exit;
+    }
+    cur_lock = &multimap->lock;
 
     struct moss_multimap_bucket **bucket = &multimap->buckets[index];
     while (*bucket && (*bucket)->key < key) {
+        ret = mtx_lock(&(*bucket)->lock);
+        if (ret) {
+            goto exit;
+        }
+        ret = mtx_unlock(cur_lock);
+        if (ret) {
+            goto exit;
+        }
+        cur_lock = &(*bucket)->lock;
+
         bucket = &(*bucket)->next;
     }
 
@@ -93,7 +113,21 @@ int moss_multimap_add(struct moss_multimap *restrict multimap, uint64_t key,
             ret = errno;
             goto exit;
         }
+        ret = mtx_init(&new_bucket->lock, mtx_plain);
+        if (ret) {
+            goto exit;
+        }
         *bucket = new_bucket;
+
+        ret = mtx_lock(&new_bucket->lock);
+        if (ret) {
+            goto exit;
+        }
+        ret = mtx_unlock(cur_lock);
+        if (ret) {
+            goto exit;
+        }
+        cur_lock = &new_bucket->lock;
     }
 
     /* Resize the array if needed. */
@@ -112,6 +146,11 @@ int moss_multimap_add(struct moss_multimap *restrict multimap, uint64_t key,
     /* Add value to array. */
     (*bucket)->vals_len++;
     (*bucket)->vals[(*bucket)->vals_len - 1] = val;
+
+    ret = mtx_unlock(cur_lock);
+    if (ret) {
+        goto exit;
+    }
 
     ret = 0;
 

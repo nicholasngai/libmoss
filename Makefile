@@ -22,17 +22,20 @@ TEST_DEP = $(TEST_TARGET:=.d)
 CPPFLAGS = -MMD -Iinclude
 CFLAGS = -std=c11 -pedantic -pedantic-errors -O3 -Wall -Wextra
 LDFLAGS = -shared
-LDLIBS =
+LDLIBS = \
+	-lpthread
 
 TOOLS_CPPFLAGS = -MMD -Iinclude
 TOOLS_CFLAGS = -std=c11 -pedantic -pedantic-errors -O3 -Wall -Wextra
 TOOLS_LDFLAGS = -L.
-TOOLS_LDLIBS = -lmoss
+TOOLS_LDLIBS = -lmoss \
+	-lpthread
 
 TEST_CPPFLAGS = -MMD -Iinclude
 TEST_CFLAGS = -Wall -Wextra -g
 TEST_LDFLAGS =
-TEST_LDLIBS =
+TEST_LDLIBS = \
+	-lpthread
 
 all: $(TARGET_SO) $(TARGET_AR) \
 	$(TOOLS_TARGETS) \

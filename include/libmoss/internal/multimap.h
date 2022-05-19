@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <threads.h>
 
 struct moss_multimap_bucket {
     uint64_t key;
@@ -11,11 +12,13 @@ struct moss_multimap_bucket {
     size_t vals_len;
     size_t vals_cap;
     struct moss_multimap_bucket *next;
+    mtx_t lock;
 };
 
 struct moss_multimap {
     struct moss_multimap_bucket **buckets;
     size_t num_buckets;
+    mtx_t lock;
 };
 
 struct moss_multimap_iter {
