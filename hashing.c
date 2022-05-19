@@ -31,7 +31,7 @@ int moss_hashing_init(moss_hashing_t *hashing, size_t k) {
 
     hashing->k = k;
     hashing->prev_tokens =
-        malloc((hashing->k - 1) * sizeof(*hashing->prev_tokens));
+        malloc(hashing->k * sizeof(*hashing->prev_tokens));
     if (!hashing->prev_tokens) {
         ret = errno;
         goto exit;
@@ -65,10 +65,12 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
     size_t tokens_read;
     int ret;
 
-    /* Hash runs of tokens including prev_tokens. */
+    /* Hash runs of tokens including prev_tokens. We exclude the last token in
+     * the input for now (it might be EOF, and we want to have half-inclusive
+     * ranges for the positions). */
     tokens_read = 0;
     while (tokens_read < hashing->prev_tokens_len
-            && tokens_read + hashing->k - hashing->prev_tokens_len - 1
+            && tokens_read + hashing->k - hashing->prev_tokens_len
                 < hashing->input_len
             && total_tokens_read + total_tokens_read < hashes_len) {
         struct hash_djb2 hash;
@@ -115,9 +117,11 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
     total_tokens_read += tokens_read;
 
     /* Hash runs of tokens in the input stream until either the end of the
-     * input is reached or the end of the output buffer is reached. */
+     * input is reached or the end of the output buffer is reached. We exclude
+     * the last token in the input for now (it might be EOF, and we want to
+     * have half-inclusive ranges for the positions). */
     tokens_read = 0;
-    while (tokens_read + hashing->k - 1 < hashing->input_len
+    while (tokens_read + hashing->k < hashing->input_len
             && total_tokens_read + tokens_read < hashes_len) {
         struct hash_djb2 hash;
         ret = hash_djb2_init(&hash);
@@ -150,11 +154,11 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
     hashing->input_len -= tokens_read;
     total_tokens_read += tokens_read;
 
-    /* If we've reached the end of the input stream, then copy the last k - 1
+    /* If we've reached the end of the input stream, then copy the last k
      * tokens into the prev_tokens buffer to save them for next time. */
-    if (hashing->input_len < hashing->k) {
+    if (hashing->input_len - 1 < hashing->k) {
         size_t tokens_to_copy =
-            MIN(hashing->k - 1 - hashing->prev_tokens_len, hashing->input_len);
+            MIN(hashing->k - hashing->prev_tokens_len, hashing->input_len);
         memcpy(hashing->prev_tokens + hashing->prev_tokens_len,
                 hashing->input + hashing->input_len - tokens_to_copy,
                 tokens_to_copy * sizeof(*hashing->prev_tokens));

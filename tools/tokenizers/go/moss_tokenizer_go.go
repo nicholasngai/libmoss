@@ -32,9 +32,9 @@ func main() {
 
 	for {
 		_, tok, _ := s.Scan()
+		fmt.Println(int(tok))
 		if tok == token.EOF {
 			break
 		}
-		fmt.Println(int(tok))
 	}
 }

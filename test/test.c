@@ -76,9 +76,8 @@ static void test_hashing(void) {
         { .hash = 210694363646, .doc = 1 },
         { .hash = 210668494320, .doc = 1 },
         { .hash = 210636649790, .doc = 1 },
-        { .hash = 210681571385, .doc = 1 },
     };
-    moss_hash_t result[13];
+    moss_hash_t result[12];
     size_t result_len = 0;
     moss_hashing_t hashing;
     int ret;
@@ -93,7 +92,7 @@ static void test_hashing(void) {
                 sizeof(result) / sizeof(*result) - result_len);
         assert(ret >= 0);
         result_len += ret;
-    } while (ret > 0 && result_len < 13);
+    } while (ret > 0 && result_len < 12);
 
     moss_hashing_input_tokens(&hashing, tokens + 2, 4);
 
@@ -102,7 +101,7 @@ static void test_hashing(void) {
                 sizeof(result) / sizeof(*result) - result_len);
         assert(ret >= 0);
         result_len += ret;
-    } while (ret > 0 && result_len < 13);
+    } while (ret > 0 && result_len < 12);
 
     moss_hashing_input_tokens(&hashing, tokens + 6, 9);
 
@@ -111,7 +110,7 @@ static void test_hashing(void) {
                 sizeof(result) / sizeof(*result) - result_len);
         assert(ret >= 0);
         result_len += ret;
-    } while (ret > 0 && result_len < 13);
+    } while (ret > 0 && result_len < 12);
 
     moss_hashing_input_tokens(&hashing, tokens + 15,
             sizeof(tokens) / sizeof(*tokens) - 15);
@@ -121,16 +120,16 @@ static void test_hashing(void) {
                 sizeof(result) / sizeof(*result) - result_len);
         assert(ret >= 0);
         result_len += ret;
-    } while (ret > 0 && result_len < 13);
+    } while (ret > 0 && result_len < 12);
 
-    assert(result_len == 13);
+    assert(result_len == 12);
 
     /* Check that the future hash call returns 0 since the input buffer should
      * have been consumed. */
     ret = moss_hashing_get_hashes(&hashing, result, 1);
     assert(!ret);
 
-    assert(result_len == 13);
+    assert(result_len == 12);
     assert(!memcmp(result, expected, sizeof(result)));
 
     moss_hashing_free(&hashing);
