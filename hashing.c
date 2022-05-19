@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <openssl/evp.h>
 #include "libmoss/defs.h"
 #include "libmoss/internal/defs.h"
 
@@ -24,6 +25,75 @@ static int hash_djb2_feed(struct hash_djb2 *djb2, uint64_t token) {
 static int hash_djb2_finalize(struct hash_djb2 *djb2, uint64_t *hash) {
     *hash = djb2->hash;
     return 0;
+}
+
+struct hash_md5 {
+    EVP_MD_CTX *ctx;
+};
+
+static int hash_md5_init(struct hash_md5 *md5) {
+    int ret;
+
+    const EVP_MD *md = EVP_get_digestbyname("md5");
+    if (!md) {
+        ret = -1;
+        goto exit;
+    }
+
+    md5->ctx = EVP_MD_CTX_new();
+    if (!md5->ctx) {
+        ret = -1;
+        goto exit;
+    }
+
+    ret = EVP_DigestInit_ex(md5->ctx, md, NULL);
+    if (ret != 1) {
+        ret = -1;
+        goto exit_free_ctx;
+    }
+
+    return 0;
+
+exit_free_ctx:
+    EVP_MD_CTX_free(md5->ctx);
+exit:
+    return ret;
+}
+
+static int hash_md5_feed(struct hash_md5 *md5, uint64_t token) {
+    int ret;
+
+    ret = EVP_DigestUpdate(md5->ctx, &token, sizeof(token));
+    if (ret != 1) {
+        ret = -1;
+        goto exit_free_ctx;
+    }
+
+    return 0;
+
+exit_free_ctx:
+    EVP_MD_CTX_free(md5->ctx);
+    return ret;
+}
+
+static int hash_md5_finalize(struct hash_md5 *md5, uint64_t *hash) {
+    unsigned char md_value[EVP_MAX_MD_SIZE];
+    unsigned int md_len;
+    int ret;
+
+    ret = EVP_DigestFinal_ex(md5->ctx, md_value, &md_len);
+    if (ret != 1) {
+        ret = -1;
+        goto exit_free_ctx;
+    }
+
+    memcpy(hash, md_value, sizeof(*hash));
+
+    ret = 0;
+
+exit_free_ctx:
+    EVP_MD_CTX_free(md5->ctx);
+    return ret;
 }
 
 int moss_hashing_init(moss_hashing_t *hashing, size_t k) {
@@ -73,8 +143,8 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
             && tokens_read + hashing->k - hashing->prev_tokens_len
                 < hashing->input_len
             && total_tokens_read + total_tokens_read < hashes_len) {
-        struct hash_djb2 hash;
-        ret = hash_djb2_init(&hash);
+        struct hash_md5 hash;
+        ret = hash_md5_init(&hash);
         if (ret) {
             goto exit;
         }
@@ -91,7 +161,7 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
 
         /* Hash first part of run from prev_tokens. */
         for (size_t i = tokens_read; i < hashing->prev_tokens_len; i++) {
-            ret = hash_djb2_feed(&hash, hashing->prev_tokens[i].token);
+            ret = hash_md5_feed(&hash, hashing->prev_tokens[i].token);
             if (ret) {
                 goto exit;
             }
@@ -101,14 +171,14 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
         for (size_t i = 0;
                 i < hashing->k - (hashing->prev_tokens_len - tokens_read);
                 i++) {
-            ret = hash_djb2_feed(&hash, hashing->input[i].token);
+            ret = hash_md5_feed(&hash, hashing->input[i].token);
             if (ret) {
                 goto exit;
             }
         }
 
         ret =
-            hash_djb2_finalize(&hash,
+            hash_md5_finalize(&hash,
                     &hashes[total_tokens_read + tokens_read].hash);
         if (ret) {
             goto exit;
@@ -129,8 +199,8 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
     tokens_read = 0;
     while (tokens_read + hashing->k < hashing->input_len
             && total_tokens_read + tokens_read < hashes_len) {
-        struct hash_djb2 hash;
-        ret = hash_djb2_init(&hash);
+        struct hash_md5 hash;
+        ret = hash_md5_init(&hash);
         if (ret) {
             goto exit;
         }
@@ -145,14 +215,14 @@ int moss_hashing_get_hashes(moss_hashing_t *restrict hashing,
 
         /* Hash run from input. */
         for (size_t i = tokens_read; i < tokens_read + hashing->k; i++) {
-            ret = hash_djb2_feed(&hash, hashing->input[i].token);
+            ret = hash_md5_feed(&hash, hashing->input[i].token);
             if (ret) {
                 goto exit;
             }
         }
 
         ret =
-            hash_djb2_finalize(&hash,
+            hash_md5_finalize(&hash,
                     &hashes[total_tokens_read + tokens_read].hash);
         if (ret) {
             goto exit;
