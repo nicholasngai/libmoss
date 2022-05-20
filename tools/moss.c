@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <signal.h>
 #include <stdatomic.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -280,6 +281,9 @@ int main(int argc, char **argv) {
     }
 
     /* Dump matches. */
+    FILE *out = stdout;
+    fprintf(out, "{\"matches\":[");
+    bool first_match = true;
     for (struct moss_multimap_iter iter =
             moss_multimap_iter_begin(&moss.fingerprints);
             moss_multimap_iter_finished(&iter);
@@ -289,20 +293,29 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        /* Dump all pairs. */
-        for (size_t i = 0; i < iter.bucket->vals_len; i++) {
-            for (size_t j = i + 1; j < iter.bucket->vals_len; j++) {
-                moss_hash_t *entry1 = iter.bucket->vals[i];
-                moss_hash_t *entry2 = iter.bucket->vals[j];
-                if (entry1->doc == entry2->doc) {
-                    continue;
-                }
-                printf("(%s:%lu-%lu, %s:%lu-%lu)\n",
-                        entry1->doc->path, entry1->start_pos, entry1->end_pos,
-                        entry2->doc->path, entry2->start_pos, entry2->end_pos);
-            }
+        /* Dump all documents matching this fingerprint. */
+        if (!first_match) {
+            fprintf(out, ",");
+        } else {
+            first_match = false;
         }
+        fprintf(out, "[");
+        bool first_doc = true;
+        for (size_t i = 0; i < iter.bucket->vals_len; i++) {
+            moss_hash_t *entry = iter.bucket->vals[i];
+            if (!first_doc) {
+                fprintf(out, ",");
+            } else {
+                first_doc = false;
+            }
+            fprintf(out, "{\"path\":\"");
+            moss_fjsondump(out, entry->doc->path);
+            fprintf(out, "\",\"start\":%lu,\"end\":%lu}", entry->start_pos,
+                    entry->end_pos);
+        }
+        fprintf(out, "]");
     }
+    fprintf(out, "]}\n");
 
     free_docs();
 exit_free_moss:
