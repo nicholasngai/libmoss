@@ -211,6 +211,20 @@ exit:
     return ret;
 }
 
+int hash_comparator(const void *a_, const void *b_) {
+    const moss_hash_t *a = *((moss_hash_t **) a_);
+    const moss_hash_t *b = *((moss_hash_t **) b_);
+    int ret;
+    ret = strcmp(a->doc->path, b->doc->path);
+    if (ret) {
+        return ret;
+    }
+    if (a->start_pos != b->start_pos) {
+        return (a->start_pos > b->start_pos) - (a->start_pos < b->start_pos);
+    }
+    return (a->end_pos > b->end_pos) - (a->end_pos - b->end_pos);
+}
+
 int main(int argc, char **argv) {
     enum moss_language language = LANG_NONE;
     char *language_str;
@@ -288,10 +302,22 @@ int main(int argc, char **argv) {
             moss_multimap_iter_begin(&moss.fingerprints);
             moss_multimap_iter_finished(&iter);
             moss_multimap_iter_next(&iter)) {
-        if (iter.bucket->vals_len == 1) {
-            /* Skip non-matches. */
+        /* Skip matches that don't have different docs. */
+        moss_doc_t *first = ((moss_hash_t *) iter.bucket->vals[0])->doc;
+        bool has_diff_docs = false;
+        for (size_t i = 1; i < iter.bucket->vals_len; i++) {
+            if (first != ((moss_hash_t *) iter.bucket->vals[i])->doc) {
+                has_diff_docs = true;
+                break;
+            }
+        }
+        if (!has_diff_docs) {
             continue;
         }
+
+        /* Sort matches for neatness. */
+        qsort(iter.bucket->vals, iter.bucket->vals_len, sizeof(moss_hash_t *),
+                hash_comparator);
 
         /* Dump all documents matching this fingerprint. */
         if (!first_match) {
