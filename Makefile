@@ -4,7 +4,8 @@ OBJS = \
 	hashing.o \
 	moss.o \
 	winnowing.o \
-	internal/multimap.o
+	internal/multimap.o \
+	internal/utils.o
 DEPS = $(OBJS:.o=.d)
 
 TOOLS_TARGETS = \

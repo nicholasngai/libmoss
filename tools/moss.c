@@ -335,7 +335,7 @@ int main(int argc, char **argv) {
                 first_doc = false;
             }
             fprintf(out, "{\"path\":\"");
-            moss_fjsondump(out, entry->doc->path);
+            moss_jsondumpstr(out, entry->doc->path);
             fprintf(out, "\",\"start\":%lu,\"end\":%lu}", entry->start_pos,
                     entry->end_pos);
         }
